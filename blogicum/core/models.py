@@ -20,27 +20,20 @@ class PublishedStrModel(models.Model):
         abstract = True
 
 
-class PostWithRelations(PublishedStrModel):
+class WithRelations(PublishedStrModel):
+    text = models.TextField(verbose_name='Текст')
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор публикации',
         related_name='%(class)s',
     )
-    location = models.ForeignKey(
-        'Location',
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        verbose_name='Местоположение',
-        related_name='%(class)s',
-    )
-    category = models.ForeignKey(
-        'Category',
-        on_delete=models.SET_NULL,
-        null=True,
-        verbose_name='Категория',
-        related_name='%(class)s',
+    pub_date = models.DateTimeField(
+        verbose_name='Дата и время публикации',
+        help_text=(
+            'Если установить дату и время в будущем — '
+            'можно делать отложенные публикации.'
+        )
     )
 
     class Meta:

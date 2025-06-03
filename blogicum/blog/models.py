@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.urls import reverse
 
-from core.models import PostWithRelations, PublishedStrModel
+from core.models import WithRelations, PublishedStrModel
 from core.constants import MAX_LEN_CHARFIELD
 
 
@@ -45,18 +46,25 @@ class Category(PublishedStrModel):
         return self.title
 
 
-class Post(PostWithRelations):
+class Post(WithRelations):
     title = models.CharField(
         max_length=MAX_LEN_CHARFIELD,
         verbose_name='Заголовок',
     )
-    text = models.TextField(verbose_name='Текст')
-    pub_date = models.DateTimeField(
-        verbose_name='Дата и время публикации',
-        help_text=(
-            'Если установить дату и время в будущем — '
-            'можно делать отложенные публикации.'
-        )
+    location = models.ForeignKey(
+        'Location',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name='Местоположение',
+        related_name='%(class)s',
+    )
+    category = models.ForeignKey(
+        'Category',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Категория',
+        related_name='%(class)s',
     )
 
     class Meta:
@@ -66,3 +74,19 @@ class Post(PostWithRelations):
 
     def __str__(self):
         return self.title
+
+
+class Comment(WithRelations):
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='%(class)s',
+    )
+
+    class Meta:
+        verbose_name = 'комментарий'
+        verbose_name_plural = 'Комментарии'
+        ordering = ['-pub_date']
+
+    def __str__(self):
+        return self.text
