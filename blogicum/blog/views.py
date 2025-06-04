@@ -19,10 +19,10 @@ class OnlyAuthorMixin(UserPassesTestMixin):
 
     def test_func(self):
         object = self.get_object()
-        return object.username == self.request.user.username
+        return object.author == self.request.user
 
 
-class BlogListView(ListView):
+class PostListView(ListView):
     model = Post
     template_name = 'blog/index.html'
     queryset = Post.objects.select_related(
@@ -36,18 +36,70 @@ class BlogListView(ListView):
     paginate_by = 10
 
 
-class BlogDetailView(DetailView):
+class PostDetailView(DetailView):
     model = Post
     template_name = 'blog/detail.html'
-    queryset = Post.objects.select_related(
-        'category',
-        'author',
-        'location',
-    ).filter(
-        is_published=True,
-        category__is_published=True,
-        pub_date__lt=datetime.now(),
-    )
+
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        post = get_object_or_404(Post, pk=pk)
+        if self.request.user == post.author:
+            return super().get_queryset().select_related(
+                'category',
+                'author',
+                'location',
+                'comment',
+            )
+        else:
+            return super().get_queryset().select_related(
+                'category',
+                'author',
+                'location',
+                'comment',
+            ).filter(
+                is_published=True,
+                category__is_published=True,
+                pub_date__lt=datetime.now(),
+            )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = CommentForm
+        context['comments'] = self.object.comment.select_related('author')
+        return context
+
+
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/create.html'
+
+    def get_success_url(self):
+        return reverse(
+            'blog:profile',
+            kwargs={'username': self.request.user.username}
+        )
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+
+class PostUpdateView(OnlyAuthorMixin, UpdateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/create.html'
+
+
+class PostDeleteView(OnlyAuthorMixin, DeleteView):
+    model = Post
+    template_name = 'blog/create.html'
+
+    def get_success_url(self):
+        return reverse(
+            'blog:profile',
+            kwargs={'username': self.request.user.username}
+        )
 
 
 class CategoryListView(ListView):
@@ -122,8 +174,26 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         )
 
 
-class BlogCreateView(CreateView):
-    pass
+class CommentCreateView(LoginRequiredMixin, CreateView):
+    post = None
+    model = Comment
+    form_class = CommentForm
+    template_name = 'blog/comment.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.post = get_object_or_404(Post, pk=kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse(
+            'blog:post_detail',
+            kwargs={'pk': self.post.pk}
+        )
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        form.instance.post = self.post
+        return super().form_valid(form)
 
 
 # def index(request):
