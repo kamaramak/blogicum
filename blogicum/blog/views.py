@@ -48,6 +48,7 @@ class PostDetailView(DetailView):
                 'category',
                 'author',
                 'location',
+            ).prefetch_related(
                 'comment',
             )
         else:
@@ -55,6 +56,7 @@ class PostDetailView(DetailView):
                 'category',
                 'author',
                 'location',
+            ).prefetch_related(
                 'comment',
             ).filter(
                 is_published=True,
@@ -175,25 +177,48 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class CommentCreateView(LoginRequiredMixin, CreateView):
-    post = None
+    post_blog = None
     model = Comment
     form_class = CommentForm
     template_name = 'blog/comment.html'
 
     def dispatch(self, request, *args, **kwargs):
-        self.post = get_object_or_404(Post, pk=kwargs['pk'])
+        self.post_blog = get_object_or_404(Post, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse(
             'blog:post_detail',
-            kwargs={'pk': self.post.pk}
+            kwargs={'pk': self.post_blog.pk}
         )
 
     def form_valid(self, form):
         form.instance.author = self.request.user
-        form.instance.post = self.post
+        form.instance.post_blog = self.post_blog
         return super().form_valid(form)
+
+
+class CommentUpdateView(OnlyAuthorMixin, UpdateView):
+    model = Comment
+    template_name = 'blog/comment.html'
+    fields = ['text']
+    context_object_name = 'comment'
+    pk_url_kwarg = 'comment_id'
+
+    def get_object(self):
+        comment_id = self.kwargs['comment_id']
+        comment = get_object_or_404(Comment, pk=comment_id)
+        return comment
+
+    def get_success_url(self):
+        return reverse(
+            'blog:post_detail',
+            kwargs={'pk': self.object.post_blog.pk}
+        )
+
+
+class CommentDeleteView(OnlyAuthorMixin, DeleteView):
+    pass
 
 
 # def index(request):

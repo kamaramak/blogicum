@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -33,7 +35,8 @@ class WithRelations(PublishedStrModel):
         help_text=(
             'Если установить дату и время в будущем — '
             'можно делать отложенные публикации.'
-        )
+        ),
+        default=datetime.now(),
     )
 
     class Meta:

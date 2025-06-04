@@ -51,6 +51,10 @@ class Post(WithRelations):
         max_length=MAX_LEN_CHARFIELD,
         verbose_name='Заголовок',
     )
+    comment_count = models.PositiveIntegerField(
+        verbose_name='Счётчик комментариев',
+        default=0,
+    )
     location = models.ForeignKey(
         'Location',
         on_delete=models.SET_NULL,
@@ -77,7 +81,7 @@ class Post(WithRelations):
 
 
 class Comment(WithRelations):
-    post = models.ForeignKey(
+    post_blog = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
         related_name='%(class)s',

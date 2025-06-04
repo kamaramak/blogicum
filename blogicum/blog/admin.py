@@ -1,10 +1,15 @@
 from django.contrib import admin
 
-from .models import Category, Location, Post
+from .models import Category, Location, Post, Comment
 
 
 class PostInline(admin.TabularInline):
     model = Post
+    extra = 0
+
+
+class CommentInline(admin.TabularInline):
+    model = Comment
     extra = 0
 
 
@@ -56,6 +61,9 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
+    inlines = (
+        CommentInline,
+    )
     list_display = (
         'title',
         'text',
