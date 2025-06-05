@@ -10,7 +10,6 @@ from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
 
 from .forms import PostForm, CommentForm
 from .models import Post, Category, Comment
-from core.constants import POSTS_ON_MAIN_COUNT
 
 User = get_user_model()
 
@@ -91,6 +90,12 @@ class PostUpdateView(OnlyAuthorMixin, UpdateView):
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
+
+    def get_success_url(self):
+        return reverse(
+            'blog:post_detail',
+            kwargs={'pk': self.object.pk}
+        )
 
 
 class PostDeleteView(OnlyAuthorMixin, DeleteView):
@@ -177,24 +182,24 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class CommentCreateView(LoginRequiredMixin, CreateView):
-    post_blog = None
+    publication = None
     model = Comment
     form_class = CommentForm
     template_name = 'blog/comment.html'
 
     def dispatch(self, request, *args, **kwargs):
-        self.post_blog = get_object_or_404(Post, pk=kwargs['pk'])
+        self.publication = get_object_or_404(Post, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse(
             'blog:post_detail',
-            kwargs={'pk': self.post_blog.pk}
+            kwargs={'pk': self.publication.pk}
         )
 
     def form_valid(self, form):
         form.instance.author = self.request.user
-        form.instance.post_blog = self.post_blog
+        form.instance.publication = self.publication
         return super().form_valid(form)
 
 
@@ -213,72 +218,21 @@ class CommentUpdateView(OnlyAuthorMixin, UpdateView):
     def get_success_url(self):
         return reverse(
             'blog:post_detail',
-            kwargs={'pk': self.object.post_blog.pk}
+            kwargs={'pk': self.object.publication.pk}
         )
 
 
 class CommentDeleteView(OnlyAuthorMixin, DeleteView):
-    pass
+    model = Comment
+    template_name = 'blog/comment.html'
 
+    def get_object(self):
+        comment_id = self.kwargs['comment_id']
+        comment = get_object_or_404(Comment, pk=comment_id)
+        return comment
 
-# def index(request):
-#     """Возвращает рендер с переданным списком всех постов"""
-#     template = 'blog/index.html'
-#     post_list = Post.objects.select_related(
-#         'category',
-#         'author',
-#         'location',
-#     ).filter(
-#         is_published=True,
-#         category__is_published=True,
-#         pub_date__lt=datetime.now(),
-#     )[:POSTS_ON_MAIN_COUNT]
-#     context = {
-#         'post_list': post_list,
-#     }
-#     return render(request, template, context)
-
-
-# def post_detail(request, id):
-#     """Возвращает рендер с переданным одним постом соответствующим"""
-#     template = 'blog/detail.html'
-#     post = get_object_or_404(
-#         Post.objects.select_related(
-#             'category',
-#             'author',
-#             'location',
-#         ).filter(
-#             is_published=True,
-#             category__is_published=True,
-#             pub_date__lt=datetime.now(),
-#         ),
-#         pk=id
-#     )
-#     context = {
-#         'post': post,
-#     }
-#     return render(request, template, context)
-
-
-# def category_posts(request, category_slug):
-#     """Возвращает рендер с переданной категорией"""
-#     template = 'blog/category.html'
-#     category = get_object_or_404(
-#         Category,
-#         is_published=True,
-#         slug=category_slug,
-#     )
-#     post_list = Post.objects.select_related(
-#         'category',
-#         'author',
-#         'location',
-#     ).filter(
-#         is_published=True,
-#         pub_date__lt=datetime.now(),
-#         category=category,
-#     )
-#     context = {
-#         'category': category,
-#         'post_list': post_list
-#     }
-#     return render(request, template, context)
+    def get_success_url(self):
+        return reverse(
+            'blog:post_detail',
+            kwargs={'pk': self.object.publication.pk}
+        )

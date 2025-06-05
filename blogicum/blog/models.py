@@ -81,7 +81,7 @@ class Post(WithRelations):
 
 
 class Comment(WithRelations):
-    post_blog = models.ForeignKey(
+    publication = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
         related_name='%(class)s',
