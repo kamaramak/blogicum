@@ -7,5 +7,5 @@ class BlogConfig(AppConfig):
     verbose_name = 'Блог'
 
     def ready(self):
-        from . import signals
+        from . import signals  # noqa: F401
         return super().ready()
