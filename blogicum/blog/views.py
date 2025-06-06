@@ -3,7 +3,7 @@ from datetime import datetime
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
                                   UpdateView)
@@ -19,6 +19,13 @@ class OnlyAuthorMixin(UserPassesTestMixin):
     def test_func(self):
         object = self.get_object()
         return object.author == self.request.user
+
+    def handle_no_permission(self):
+        pk = self.kwargs['pk']
+        return redirect(reverse(
+            'blog:post_detail',
+            kwargs={'pk': pk}
+        ))
 
 
 class PostListView(ListView):
@@ -65,7 +72,7 @@ class PostDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = CommentForm
+        context['form'] = CommentForm()
         context['comments'] = self.object.comment.select_related('author')
         return context
 
@@ -182,24 +189,23 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class CommentCreateView(LoginRequiredMixin, CreateView):
-    publication = None
     model = Comment
     form_class = CommentForm
     template_name = 'blog/comment.html'
 
     def dispatch(self, request, *args, **kwargs):
-        self.publication = get_object_or_404(Post, pk=kwargs['pk'])
+        self.current_post = get_object_or_404(Post, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse(
             'blog:post_detail',
-            kwargs={'pk': self.publication.pk}
+            kwargs={'pk': self.current_post.pk}
         )
 
     def form_valid(self, form):
         form.instance.author = self.request.user
-        form.instance.publication = self.publication
+        form.instance.post = self.current_post
         return super().form_valid(form)
 
 
@@ -218,7 +224,7 @@ class CommentUpdateView(OnlyAuthorMixin, UpdateView):
     def get_success_url(self):
         return reverse(
             'blog:post_detail',
-            kwargs={'pk': self.object.publication.pk}
+            kwargs={'pk': self.object.post.pk}
         )
 
 
@@ -234,5 +240,5 @@ class CommentDeleteView(OnlyAuthorMixin, DeleteView):
     def get_success_url(self):
         return reverse(
             'blog:post_detail',
-            kwargs={'pk': self.object.publication.pk}
+            kwargs={'pk': self.object.post.pk}
         )

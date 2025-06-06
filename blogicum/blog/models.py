@@ -1,6 +1,7 @@
+from datetime import datetime
+
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.urls import reverse
 
 from core.models import WithRelations, PublishedStrModel
 from core.constants import MAX_LEN_CHARFIELD
@@ -51,6 +52,14 @@ class Post(WithRelations):
         max_length=MAX_LEN_CHARFIELD,
         verbose_name='Заголовок',
     )
+    pub_date = models.DateTimeField(
+        verbose_name='Дата и время публикации',
+        help_text=(
+            'Если установить дату и время в будущем — '
+            'можно делать отложенные публикации.'
+        ),
+        default=datetime.now(),
+    )
     comment_count = models.PositiveIntegerField(
         verbose_name='Счётчик комментариев',
         default=0,
@@ -82,7 +91,7 @@ class Post(WithRelations):
 
 
 class Comment(WithRelations):
-    publication = models.ForeignKey(
+    post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
         related_name='%(class)s',
@@ -91,7 +100,7 @@ class Comment(WithRelations):
     class Meta:
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'
-        ordering = ['pub_date']
+        ordering = ['created_at']
 
     def __str__(self):
         return self.text

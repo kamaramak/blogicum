@@ -1,4 +1,6 @@
 asgiref==3.8.1
+attrs==24.2.0
+beautifulsoup4==4.12.3
 colorama==0.4.6
 Django==4.2.9
 django-bootstrap5==25.1
@@ -17,7 +19,10 @@ mypy==1.15.0
 mypy_extensions==1.1.0
 packaging==25.0
 pep8-naming==0.14.1
+pillow==11.0.0
+platformdirs==4.3.6
 pluggy==1.5.0
+py==1.11.0
 pycodestyle==2.12.1
 pydocstyle==6.3.0
 pyflakes==3.2.0
@@ -27,8 +32,11 @@ python-dateutil==2.9.0.post0
 pytz==2025.2
 six==1.17.0
 snowballstemmer==3.0.1
+soupsieve==2.6
 sqlparse==0.5.3
+tomli==2.1.0
 types-psycopg2==2.9.21.20250318
 types-PyYAML==6.0.12.20250402
 typing_extensions==4.13.2
 tzdata==2025.2
+yapf==0.43.0
