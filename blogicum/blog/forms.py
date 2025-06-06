@@ -15,7 +15,7 @@ class PostForm(forms.ModelForm):
             ),
             'text': forms.Textarea(
                 attrs={'rows': 5, 'cols': 2},
-            )
+            ),
         }
 
 
