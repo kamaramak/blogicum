@@ -60,10 +60,6 @@ class Post(WithRelations):
         ),
         default=datetime.now(),
     )
-    comment_count = models.PositiveIntegerField(
-        verbose_name='Счётчик комментариев',
-        default=0,
-    )
     location = models.ForeignKey(
         'Location',
         on_delete=models.SET_NULL,

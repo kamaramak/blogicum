@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
@@ -36,7 +37,7 @@ class PostListView(ListView):
         is_published=True,
         category__is_published=True,
         pub_date__lt=datetime.now(),
-    )
+    ).annotate(comment_count=Count('comment'))
     ordering = '-pub_date'
     paginate_by = 10
 
@@ -55,7 +56,7 @@ class PostDetailView(DetailView):
                 'location',
             ).prefetch_related(
                 'comment',
-            )
+            ).annotate(comment_count=Count('comment'))
         else:
             return super().get_queryset().select_related(
                 'category',
@@ -67,7 +68,7 @@ class PostDetailView(DetailView):
                 is_published=True,
                 category__is_published=True,
                 pub_date__lt=datetime.now(),
-            )
+            ).annotate(comment_count=Count('comment'))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -134,7 +135,7 @@ class CategoryListView(ListView):
             category__is_published=True,
             pub_date__lt=datetime.now(),
             category=self.category
-        )
+        ).annotate(comment_count=Count('comment'))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -154,7 +155,7 @@ class ProfileListlView(ListView):
         if self.request.user == user:
             return super().get_queryset().select_related(
                 'author', 'location', 'category'
-            ).filter(author=user)
+            ).filter(author=user).annotate(comment_count=Count('comment'))
         else:
             return super().get_queryset().select_related(
                 'author', 'location', 'category'
@@ -162,7 +163,7 @@ class ProfileListlView(ListView):
                 author=user,
                 is_published=True,
                 pub_date__lt=datetime.now()
-            )
+            ).annotate(comment_count=Count('comment'))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
