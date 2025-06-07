@@ -49,26 +49,21 @@ class PostDetailView(DetailView):
     def get_queryset(self):
         pk = self.kwargs['pk']
         post = get_object_or_404(Post, pk=pk)
+        current_queryset = super().get_queryset().select_related(
+            'category',
+            'author',
+            'location',
+        ).prefetch_related(
+            'comment',
+        )
         if self.request.user == post.author:
-            return super().get_queryset().select_related(
-                'category',
-                'author',
-                'location',
-            ).prefetch_related(
-                'comment',
-            ).annotate(comment_count=Count('comment'))
+            return current_queryset
         else:
-            return super().get_queryset().select_related(
-                'category',
-                'author',
-                'location',
-            ).prefetch_related(
-                'comment',
-            ).filter(
+            return current_queryset.filter(
                 is_published=True,
                 category__is_published=True,
                 pub_date__lt=datetime.now(),
-            ).annotate(comment_count=Count('comment'))
+            )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -152,14 +147,15 @@ class ProfileListlView(ListView):
     def get_queryset(self):
         username = self.kwargs['username']
         user = get_object_or_404(User, username=username)
+        current_queryset = super().get_queryset().select_related(
+            'author', 'location', 'category'
+        )
         if self.request.user == user:
-            return super().get_queryset().select_related(
-                'author', 'location', 'category'
-            ).filter(author=user).annotate(comment_count=Count('comment'))
+            return current_queryset.filter(author=user).annotate(
+                comment_count=Count('comment')
+            )
         else:
-            return super().get_queryset().select_related(
-                'author', 'location', 'category'
-            ).filter(
+            return current_queryset.filter(
                 author=user,
                 is_published=True,
                 pub_date__lt=datetime.now()
