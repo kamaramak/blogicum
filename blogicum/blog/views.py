@@ -1,31 +1,19 @@
 from datetime import datetime
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
                                   UpdateView)
 
-from .forms import PostForm, CommentForm
-from .models import Post, Category, Comment
+from .forms import CommentForm, PostForm
+from .models import Category, Comment, Post
+from core.constants import PAGE_SIZE
+from core.mixins import OnlyAuthorMixin
 
 User = get_user_model()
-
-
-class OnlyAuthorMixin(UserPassesTestMixin):
-
-    def test_func(self):
-        object = self.get_object()
-        return object.author == self.request.user
-
-    def handle_no_permission(self):
-        pk = self.kwargs['pk']
-        return redirect(reverse(
-            'blog:post_detail',
-            kwargs={'pk': pk}
-        ))
 
 
 class PostListView(ListView):
@@ -39,7 +27,7 @@ class PostListView(ListView):
         pub_date__lt=datetime.now(),
     ).annotate(comment_count=Count('comment'))
     ordering = '-pub_date'
-    paginate_by = 10
+    paginate_by = PAGE_SIZE
 
 
 class PostDetailView(DetailView):
@@ -58,12 +46,11 @@ class PostDetailView(DetailView):
         )
         if self.request.user == post.author:
             return current_queryset
-        else:
-            return current_queryset.filter(
-                is_published=True,
-                category__is_published=True,
-                pub_date__lt=datetime.now(),
-            )
+        return current_queryset.filter(
+            is_published=True,
+            category__is_published=True,
+            pub_date__lt=datetime.now(),
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -115,7 +102,7 @@ class CategoryListView(ListView):
     model = Post
     template_name = 'blog/category.html'
     ordering = '-pub_date'
-    paginate_by = 10
+    paginate_by = PAGE_SIZE
 
     def get_queryset(self):
         self.category = get_object_or_404(
@@ -142,7 +129,7 @@ class ProfileListlView(ListView):
     model = Post
     template_name = 'blog/profile.html'
     ordering = '-pub_date'
-    paginate_by = 10
+    paginate_by = PAGE_SIZE
 
     def get_queryset(self):
         username = self.kwargs['username']
@@ -154,12 +141,11 @@ class ProfileListlView(ListView):
             return current_queryset.filter(author=user).annotate(
                 comment_count=Count('comment')
             )
-        else:
-            return current_queryset.filter(
-                author=user,
-                is_published=True,
-                pub_date__lt=datetime.now()
-            ).annotate(comment_count=Count('comment'))
+        return current_queryset.filter(
+            author=user,
+            is_published=True,
+            pub_date__lt=datetime.now()
+        ).annotate(comment_count=Count('comment'))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -214,8 +200,7 @@ class CommentUpdateView(OnlyAuthorMixin, UpdateView):
 
     def get_object(self):
         comment_id = self.kwargs['comment_id']
-        comment = get_object_or_404(Comment, pk=comment_id)
-        return comment
+        return get_object_or_404(Comment, pk=comment_id)
 
     def get_success_url(self):
         return reverse(
@@ -230,8 +215,7 @@ class CommentDeleteView(OnlyAuthorMixin, DeleteView):
 
     def get_object(self):
         comment_id = self.kwargs['comment_id']
-        comment = get_object_or_404(Comment, pk=comment_id)
-        return comment
+        return get_object_or_404(Comment, pk=comment_id)
 
     def get_success_url(self):
         return reverse(
