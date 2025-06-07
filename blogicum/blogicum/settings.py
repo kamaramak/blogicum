@@ -7,8 +7,10 @@ SECRET_KEY = 'django-insecure-l7-@=uer)pa!$qw%80ipr*vj81yby-2!qkkhufny%k#l=%7&8)
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
+    # 'localhost', :для локальной работы
+    # '127.0.0.1', :для локальной работы
+    'www.kamaramak.pythonanywhere.com',
+    'kamaramak.pythonanywhere.com',
 ]
 
 INSTALLED_APPS = [
